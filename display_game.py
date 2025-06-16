@@ -7,53 +7,72 @@ from config.display_config import (
     COLOR_TARGET, COLOR_BOX, COLOR_BOX_OK, COLOR_PLAYER
 )
 
+BUTTON_WIDTH = 120
+BUTTON_HEIGHT = 40
+BUTTON_MARGIN = 10
+FONT_SIZE = 20
 
+def draw_buttons(screen, font, width):
+    buttons = {}
+    labels = ["Undo", "Reset", "Quit"]
+    for i, label in enumerate(labels):
+        x = BUTTON_MARGIN + i * (BUTTON_WIDTH + BUTTON_MARGIN)
+        y = BUTTON_MARGIN
+        rect = pygame.Rect(x, y, BUTTON_WIDTH, BUTTON_HEIGHT)
+        buttons[label.lower()] = rect
+        pygame.draw.rect(screen, (180, 180, 180), rect)
+        text = font.render(label, True, (0, 0, 0))
+        screen.blit(text, text.get_rect(center=rect.center))
+    return buttons
 
-def draw_grid(screen, game):
+def draw_grid(screen, game, y_offset):
     for y, row in enumerate(game.map.grid):
         for x, cell in enumerate(row):
-            rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE + y_offset, TILE_SIZE, TILE_SIZE)
 
-            # Wallpaper
             pygame.draw.rect(screen, COLOR_FLOOR, rect)
-
-            # Wall
             if cell == -1:
                 pygame.draw.rect(screen, COLOR_WALL, rect)
-            # Target
             elif (x, y) in game.map.targets:
                 pygame.draw.circle(screen, COLOR_TARGET, rect.center, TILE_SIZE // 4)
 
-    # Boxes
     for box in game.boxes:
         bx, by = box.position()
-        rect = pygame.Rect(bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        rect = pygame.Rect(bx * TILE_SIZE, by * TILE_SIZE + y_offset, TILE_SIZE, TILE_SIZE)
         color = COLOR_BOX_OK if (bx, by) in game.map.targets else COLOR_BOX
         pygame.draw.rect(screen, color, rect.inflate(-10, -10))
 
-    # Player
     px, py = game.player.position()
-    player_rect = pygame.Rect(px * TILE_SIZE, py * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+    player_rect = pygame.Rect(px * TILE_SIZE, py * TILE_SIZE + y_offset, TILE_SIZE, TILE_SIZE)
     pygame.draw.circle(screen, COLOR_PLAYER, player_rect.center, TILE_SIZE // 3)
 
 def main():
     pygame.init()
+    font = pygame.font.SysFont(None, FONT_SIZE)
     clock = pygame.time.Clock()
 
-    # Load level and status
     sokomap = SokobanMap()
     sokomap.load_from_file("levels/level1.txt")
     game = GameState(sokomap)
 
-    # Determine the window size
-    width = len(game.map.grid[0]) * TILE_SIZE
-    height = len(game.map.grid) * TILE_SIZE
-    screen = pygame.display.set_mode((width, height))
+    grid_width = len(game.map.grid[0]) * TILE_SIZE
+    grid_height = len(game.map.grid) * TILE_SIZE
+    screen_height = grid_height + BUTTON_HEIGHT + 2 * BUTTON_MARGIN
+    screen = pygame.display.set_mode((grid_width, screen_height))
     pygame.display.set_caption("Auto Sokoban")
 
     running = True
     while running:
         clock.tick(FPS)
+        screen.fill(COLOR_BG)
+
+        # Draw the buttons
+        buttons = draw_buttons(screen, font, grid_width)
+
+        # Draw the grid
+        draw_grid(screen, game, BUTTON_HEIGHT + 2 * BUTTON_MARGIN)
+
+        pygame.display.flip()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -73,13 +92,18 @@ def main():
                 if dx or dy:
                     game.move_player(dx, dy)
 
-        screen.fill(COLOR_BG)
-        draw_grid(screen, game)
-        pygame.display.flip()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = event.pos
+                if buttons["undo"].collidepoint(mx, my):
+                    game.undo()
+                elif buttons["reset"].collidepoint(mx, my):
+                    game.reset()
+                elif buttons["quit"].collidepoint(mx, my):
+                    running = False
 
         if game.is_win():
-            print("🎉 Victory !")
-            pygame.time.wait(1500)
+            print("Victory !")
+            pygame.time.wait(1000)
             running = False
 
     pygame.quit()
