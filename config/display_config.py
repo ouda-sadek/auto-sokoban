@@ -1,0 +1,12 @@
+# Dimensions
+TILE_SIZE = 150
+FPS = 60
+
+# Colors (R, G, B)
+COLOR_BG = (30, 30, 30)
+COLOR_WALL = (50, 50, 50)
+COLOR_FLOOR = (200, 200, 200)
+COLOR_TARGET = (255, 210, 0)
+COLOR_BOX = (139, 69, 19)
+COLOR_BOX_OK = (0, 180, 0)
+COLOR_PLAYER = (0, 100, 255)
