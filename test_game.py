@@ -34,14 +34,14 @@ def main():
     sokomap.load_from_file('levels/level1.txt')
     game = GameState(sokomap)
 
-    print("Controls: z=up, s=down, q=left, d=right, u=undo, x=quit\n")
+    print("Controls: z=up, s=down, q=left, d=right, u=undo, r=reset, x=quit\n")
 
     while True:
         render_console(game)
         if game.is_win():
             print("Victory !")
             break
-        # Afficher les mouvements possibles
+        # Show possible moves
         dirs = {'z': (0, -1), 's': (0, 1), 'q': (-1, 0), 'd': (1, 0)}
         valid = [k for k, (dx, dy) in dirs.items() if game.is_valid_move(dx, dy)]
         print("Possible moves:", ' '.join(valid))
@@ -57,6 +57,9 @@ def main():
             game.move_player(1, 0)
         elif cmd == 'u':
             game.undo()
+        elif cmd == 'r':
+            game.reset()
+
         elif cmd == 'x':
             break
         else:
