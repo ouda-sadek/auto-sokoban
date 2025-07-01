@@ -1,6 +1,9 @@
 # Dimensions
-TILE_SIZE = 150
+TILE_SIZE = 64
 FPS = 60
+
+# Margin around the grid (in pixels)
+GRID_MARGIN = 30
 
 # Colors (R, G, B)
 COLOR_BG = (30, 30, 30)
@@ -17,3 +20,10 @@ BUTTON_HEIGHT = 40
 BUTTON_MARGIN = 10
 FONT_SIZE = 20
 
+
+# Maximum window limits (adapted to your screen)
+"""MAX_SCREEN_WIDTH = 1400
+MAX_SCREEN_HEIGHT = 800"""
+
+WINDOW_WIDTH = 1400
+WINDOW_HEIGHT = 800
