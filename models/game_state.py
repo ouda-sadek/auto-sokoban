@@ -70,3 +70,18 @@ class GameState:
 
     def is_win(self):
         return all((box.x, box.y) in self.map.targets for box in self.boxes)
+    
+    def clone(self):
+        clone = GameState(self.map)
+        clone.player = self.player.copy()  # Assure-toi que Player a une méthode copy()
+        clone.boxes = [box.copy() for box in self.boxes]  # Assure-toi que Box a une méthode copy()
+        clone.history = list(self.history)  # copie l’historique pour pouvoir faire "undo" dans le clone si besoin
+        return clone
+    
+    def get_hash(self):
+        # Trie les positions des caisses pour éviter les permutations inutiles
+        box_positions = sorted([box.position() for box in self.boxes])
+        player_pos = self.player.position()
+        return (player_pos, tuple(box_positions))
+
+

@@ -13,10 +13,11 @@ from database import get_leaderboard
 
 
 class SokobanGameApp:
-    def __init__(self):
+    def __init__(self, level_path_override=None):
         pygame.init()
         self.font = pygame.font.SysFont(None, FONT_SIZE)
         self.clock = pygame.time.Clock()
+        self.level_path_override = level_path_override 
         self.level_manager = LevelManager()
         self.load_level()
         self.sprite_loader = SpriteLoader("assets/images", TILE_SIZE)
@@ -29,11 +30,16 @@ class SokobanGameApp:
 
 
     def load_level(self):
-        level_path = self.level_manager.get_current_level_path()
+        if self.level_path_override:
+            level_path = self.level_path_override
+        else:
+                level_path = self.level_manager.get_current_level_path()
+        
         self.sokomap = SokobanMap()
         self.sokomap.load_from_file(level_path)
         self.game = GameState(self.sokomap)
         self.setup_display()
+
 
     def setup_display(self):
         self.grid_width = max(len(row) for row in self.game.map.grid) * TILE_SIZE
@@ -45,6 +51,13 @@ class SokobanGameApp:
 
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Auto Sokoban")
+
+    def display_message(self, message, pause=1.0):
+        overlay = self.font.render(message, True, (255, 255, 255))
+        rect = overlay.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
+        self.screen.blit(overlay, rect)
+        pygame.display.flip()
+        time.sleep(pause)
 
     def run(self):
         running = True
@@ -90,7 +103,7 @@ class SokobanGameApp:
 
     def draw_buttons(self):
         buttons = {}
-        labels = ["Undo", "Reset", "Quit"]
+        labels = ["Undo", "Reset", "Quit", "Solve"]
         for i, label in enumerate(labels):
             x = BUTTON_MARGIN + i * (BUTTON_WIDTH + BUTTON_MARGIN)
             y = BUTTON_MARGIN
@@ -165,15 +178,44 @@ class SokobanGameApp:
                 nb_frames = len(frames_list)
                 self.player_frame = (self.player_frame + 1) % nb_frames  
 
+    def play_solution(self, moves, delay=0.3):
+        for move in moves:
+            if move == 'up':
+                key = pygame.K_z
+            elif move == 'down':
+                key = pygame.K_s
+            elif move == 'left':
+                key = pygame.K_q
+            elif move == 'right':
+                key = pygame.K_d
+            else:
+                continue  # ignore mouvements invalides
+
+            self.handle_key(key)      # déclenche le mouvement
+            self.screen.fill(COLOR_BG)
+            self.draw_buttons()
+            self.draw_grid()
+            pygame.display.flip()
+            time.sleep(delay)         # pause pour voir l’animation
 
 
-
+    
     def handle_click(self, pos, buttons):
         mx, my = pos
         if buttons["undo"].collidepoint(mx, my):
             self.game.undo()
         elif buttons["reset"].collidepoint(mx, my):
             self.game.reset()
+        elif buttons["solve"].collidepoint(mx, my):
+            from solver import SokobanSolver
+            solver = SokobanSolver(self.game)
+            solution = solver.solve_bfs()  # ou solve_dfs()
+            if solution:
+                print("🧠 Solution trouvée :", solution)
+                self.play_solution(solution, delay=0.2)
+            else:
+                print("❌ Aucune solution trouvée.")
         elif buttons["quit"].collidepoint(mx, my):
             pygame.quit()
             exit()
+

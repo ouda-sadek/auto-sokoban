@@ -9,3 +9,7 @@ class Box:
     def move(self, dx, dy):
         self.x += dx
         self.y += dy
+
+    def copy(self):
+        return Box(self.x, self.y)
+
