@@ -4,6 +4,10 @@ from models.game_state import GameState
 from config.display_config import *
 from level_manager import LevelManager
 from sprite_loader import SpriteLoader
+from database import save_score
+import time
+from database import get_leaderboard
+
 
 
 
@@ -19,6 +23,9 @@ class SokobanGameApp:
         self.player_direction = "down"
         self.player_frame = 0
         self.player_frame_timer = 0
+        self.move_count = 0
+        self.start_time = time.time()
+
 
 
     def load_level(self):
@@ -58,8 +65,23 @@ class SokobanGameApp:
 
             if self.game.is_win():
                 pygame.time.wait(1000)
+
+                duration = round(time.time() - self.start_time, 2)
+                level_name = self.level_manager.get_current_level_path()
+                save_score(level_name, self.move_count, duration)
+
+                # Affichage du leaderboard (top 5)
+                print("\n Niveau terminé ! Voici le classement :")
+                print(f" Niveau : {level_name}")
+                scores = get_leaderboard(level_name)
+                for i, (name, moves, t, date) in enumerate(scores, 1):
+                    print(f"{i}. {name} - {moves} coups - {t}s - {date}")
+
                 if self.level_manager.next_level():
                     self.load_level()
+                    self.move_count = 0
+                    self.start_time = time.time()
+
                 else:
                     print("Tous les niveaux terminés.")
                     running = False
@@ -137,14 +159,11 @@ class SokobanGameApp:
         if dx or dy:
             moved = self.game.move_player(dx, dy)
             if moved:
-
+                self.move_count += 1
                 # if effective movement, move to the next frame
                 frames_list = self.sprite_loader.get("player")[self.player_direction]
                 nb_frames = len(frames_list)
                 self.player_frame = (self.player_frame + 1) % nb_frames  
-
-
-        
 
 
 
