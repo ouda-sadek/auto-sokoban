@@ -2,6 +2,8 @@ import sqlite3
 import os
 
 DB_PATH = os.path.join("data", "scores.db")
+print("Utilisation de la base :", DB_PATH)
+
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -29,16 +31,28 @@ def save_score(level_name, moves, duration, player_name="Anonymous"):
     conn.commit()
     conn.close()
 
-def get_leaderboard(level_name, limit=5):
+def get_leaderboard(level_name=None, limit=5):
     conn = sqlite3.connect(DB_PATH)
+    #conn = sqlite3.connect("data/scores.db")
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT player_name, moves, time, date
-        FROM scores
-        WHERE level_name = ?
-        ORDER BY moves ASC, time ASC
-        LIMIT ?
-    """, (level_name, limit))
-    scores = cursor.fetchall()
-    conn.close()
-    return scores
+    if level_name:
+        cursor.execute("""
+            SELECT player_name, level_name, moves, time, date
+            FROM scores
+            WHERE level_name = ?
+            ORDER BY moves ASC, time ASC
+            LIMIT ?
+        """, (level_name, limit))
+        scores = cursor.fetchall()
+        conn.close()
+        return scores
+    
+    else:
+        cursor.execute("""
+            SELECT player_name, level_name, moves, time, date
+            ORDER BY moves, time
+            LIMIT ?
+        """, (limit,))
+        results = cursor.fetchall()
+        conn.close()
+        return results

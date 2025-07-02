@@ -4,4 +4,5 @@ init_db()
 
 if __name__ == "__main__":
     app = SokobanGameApp()
+    app.main_menu()
     app.run()

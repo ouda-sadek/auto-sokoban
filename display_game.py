@@ -9,9 +9,6 @@ import time
 from database import get_leaderboard
 
 
-
-
-
 class SokobanGameApp:
     def __init__(self, level_path_override=None):
         pygame.init()
@@ -52,12 +49,88 @@ class SokobanGameApp:
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Auto Sokoban")
 
-    def display_message(self, message, pause=1.0):
+    """def display_message(self, message, pause=1.0):
         overlay = self.font.render(message, True, (255, 255, 255))
         rect = overlay.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
         self.screen.blit(overlay, rect)
         pygame.display.flip()
-        time.sleep(pause)
+        time.sleep(pause)"""
+
+    def display_message(self, message, pause=1.0, big=False, color=(255, 255, 255)):
+        font = pygame.font.SysFont(None, 64 if big else FONT_SIZE)
+        overlay = font.render(message, True, color)
+        rect = overlay.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
+        self.screen.fill(COLOR_BG)  # Nettoie l’écran
+        self.draw_buttons()         # Redessine les boutons si besoin
+        self.screen.blit(overlay, rect)
+        pygame.display.flip()
+        if pause > 0:
+            time.sleep(pause)
+
+    
+    def main_menu(self):
+        running = True
+        while running:
+            self.clock.tick(FPS)
+            self.screen.fill(COLOR_BG)
+
+            # Titre du jeu
+            title_font = pygame.font.SysFont(None, 72)
+            title = title_font.render("🧠 Auto Sokoban", True, (255, 255, 255))
+            title_rect = title.get_rect(center=(self.screen_width // 2, 100))
+            self.screen.blit(title, title_rect)
+
+            # Boutons
+            buttons = {
+                "play": pygame.Rect((self.screen_width - 200) // 2, 200, 200, 50),
+                "scores": pygame.Rect((self.screen_width - 200) // 2, 270, 200, 50),
+                "quit": pygame.Rect((self.screen_width - 200) // 2, 340, 200, 50),
+            }
+
+            for name, rect in buttons.items():
+                pygame.draw.rect(self.screen, (180, 180, 180), rect)
+                label = self.font.render(name.capitalize(), True, (0, 0, 0))
+                self.screen.blit(label, label.get_rect(center=rect.center))
+
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mx, my = event.pos
+                    if buttons["play"].collidepoint(mx, my):
+                        return  # Quitte le menu et commence le jeu
+                    elif buttons["scores"].collidepoint(mx, my):
+                        self.display_scores()
+                    elif buttons["quit"].collidepoint(mx, my):
+                        pygame.quit()
+                        exit()
+
+    def display_scores(self):
+        self.screen.fill(COLOR_BG)
+        scores = get_leaderboard()  # Ou passe le nom du niveau si tu veux filtrer
+
+        title = self.font.render(" Top scores", True, (255, 255, 0))
+        self.screen.blit(title, (50, 50))
+
+        for i, (level, moves, time_s, date) in enumerate(scores, start=1):
+            text = self.font.render(f"{i}. {level} - {moves} coups - {time_s}s", True, (255, 255, 255))
+            self.screen.blit(text, (50, 80 + i * 30))
+
+        pygame.display.flip()
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    waiting = False
+
+        if not scores:
+            no_score = self.font.render("Aucun score enregistré", True, (200, 200, 200))
+            self.screen.blit(no_score, (50, 100))
+
+
 
     def run(self):
         running = True
@@ -87,8 +160,13 @@ class SokobanGameApp:
                 print("\n Niveau terminé ! Voici le classement :")
                 print(f" Niveau : {level_name}")
                 scores = get_leaderboard(level_name)
-                for i, (name, moves, t, date) in enumerate(scores, 1):
+                print("SCORES RAW:", scores)
+                for i, row in enumerate(scores, 1):
+                    print(f"{i}. row = {row}")
+
+                for i, (name, level_name, moves, t, date) in enumerate(scores, 1):
                     print(f"{i}. {name} - {moves} coups - {t}s - {date}")
+                
 
                 if self.level_manager.next_level():
                     self.load_level()
@@ -97,7 +175,44 @@ class SokobanGameApp:
 
                 else:
                     print("Tous les niveaux terminés.")
-                    running = False
+                    
+                    waiting = True
+                    while waiting:
+                        self.clock.tick(FPS)
+                        self.screen.fill(COLOR_BG)
+
+                        # Overlay noir semi-transparent
+                        overlay = pygame.Surface((self.screen_width, self.screen_height))
+                        overlay.set_alpha(180)
+                        overlay.fill((0, 0, 0))
+                        self.screen.blit(overlay, (0, 0))
+
+                        # Message vert grand
+                        font = pygame.font.SysFont(None, 64)
+                        message = font.render("🎉 Tous les niveaux sont terminés !", True, (0, 255, 0))
+                        rect = message.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
+                        self.screen.blit(message, rect)
+
+                        # Bouton Quit
+                        quit_rect = pygame.Rect(
+                            (self.screen_width - BUTTON_WIDTH) // 2,
+                            rect.bottom + 40,
+                            BUTTON_WIDTH,
+                            BUTTON_HEIGHT
+                        )
+                        pygame.draw.rect(self.screen, (180, 180, 180), quit_rect)
+                        text = self.font.render("Quit", True, (0, 0, 0))
+                        self.screen.blit(text, text.get_rect(center=quit_rect.center))
+
+                        pygame.display.flip()
+
+                        for event in pygame.event.get():
+                            if event.type == pygame.QUIT:
+                                waiting = False
+                            elif event.type == pygame.MOUSEBUTTONDOWN:
+                                if quit_rect.collidepoint(event.pos):
+                                    waiting = False
+
 
         pygame.quit()
 
@@ -211,10 +326,10 @@ class SokobanGameApp:
             solver = SokobanSolver(self.game)
             solution = solver.solve_bfs()  # ou solve_dfs()
             if solution:
-                print("🧠 Solution trouvée :", solution)
+                print(" Solution trouvée :", solution)
                 self.play_solution(solution, delay=0.2)
             else:
-                print("❌ Aucune solution trouvée.")
+                print(" Aucune solution trouvée.")
         elif buttons["quit"].collidepoint(mx, my):
             pygame.quit()
             exit()
